@@ -13,65 +13,68 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
-    body { 
-      font-family: 'Prompt', sans-serif;
-      background-color: #f1f5f9;
-    }
-    .watermark-number {
-      position: absolute;
-      right: 0.25rem;
-      bottom: -0.5rem;
-      font-size: 4rem;
-      font-weight: 900;
-      line-height: 1;
-      opacity: 0.15;
-      pointer-events: none;
-    }
+    body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
+    
     /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    .table-container { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
   </style>
 </head>
 
-<body class="antialiased text-slate-800">
-  
-  <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center gap-3">
-          <div class="bg-blue-500 p-2 rounded-lg"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
-          <span class="font-bold text-xl tracking-wide">Teacher Dashboard</span>
-        </div>
-        <div><span class="text-sm font-medium bg-slate-800 px-3 py-1 rounded-full text-slate-300 border border-slate-700">คลินิกคณิตศาสตร์ PSU.WIT</span></div>
-      </div>
-    </div>
-  </nav>
+<body class="antialiased text-slate-800 p-4 md:p-8">
 
-  <div class="max-w-7xl mx-auto p-4 md:p-8">
-    
-    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row gap-4 items-end">
-      <div class="w-full md:w-1/3">
-        <label class="block text-sm font-bold text-slate-600 mb-2">เลือกนักเรียนที่ต้องการดู</label>
-        <select id="student-filter" class="w-full px-4 py-3 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium">
-          <option value="ALL">กำลังโหลดรายชื่อนักเรียน...</option>
-        </select>
+  <div class="max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="flex items-center gap-4">
+        <div class="bg-blue-600 p-3 rounded-xl shadow-md text-white">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold text-slate-800">Teacher Dashboard</h1>
+          <p class="text-slate-500 text-sm">ระบบติดตามการทำแบบฝึกหัด คลินิกคณิตศาสตร์</p>
+        </div>
       </div>
-      <div>
-        <button id="btn-refresh" class="px-6 py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold rounded-xl flex items-center gap-2 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> โหลดข้อมูลใหม่
+
+      <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+        <div class="relative w-full md:w-64">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input type="text" id="search-input" class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium" placeholder="กรอกรหัสนักเรียน...">
+        </div>
+        <button id="btn-refresh" class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-slate-300">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> โหลดใหม่
         </button>
       </div>
     </div>
 
-    <div id="loading-state" class="flex flex-col items-center justify-center py-20">
+    <div id="loading-state" class="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
       <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>
       <p class="text-slate-500 font-medium">กำลังดึงข้อมูลจากฐานข้อมูล...</p>
     </div>
 
-    <div id="students-container" class="space-y-6 hidden">
+    <div id="table-wrapper" class="hidden table-container bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-800 text-white">
+            <tr>
+              <th scope="col" class="px-6 py-4 text-left font-bold tracking-wider w-1/4">ข้อมูลนักเรียน</th>
+              <th scope="col" class="px-6 py-4 text-center font-bold tracking-wider w-2/4">ภาพรวม 10 ตอน (เลขลายน้ำคือจำนวนครั้งที่ทำ)</th>
+              <th scope="col" class="px-6 py-4 text-left font-bold tracking-wider w-1/4">ประวัติการทำละเอียด</th>
+            </tr>
+          </thead>
+          <tbody id="table-body" class="bg-white divide-y divide-slate-200">
+            </tbody>
+        </table>
       </div>
+      <div id="no-data-msg" class="hidden text-center py-10 text-slate-500 font-medium bg-slate-50">
+        ไม่พบข้อมูลนักเรียนที่ค้นหา
+      </div>
+    </div>
 
   </div>
 
@@ -79,44 +82,42 @@
     // ----------------------------------------------------------------------
     // ⚠️ ตั้งค่า Supabase ตรงนี้
     // ----------------------------------------------------------------------
-    const SUPABASE_URL = 'https://vcxneoclwtbiiyjsyhve.supabase.co'; // เช่น 'https://vcxneoclwtbiiyjsyhve.supabase.co'
-    const SUPABASE_ANON_KEY = 'sb_publishable_UUUwDKz-aB2YKoOKkxz9ZQ_tSI_7LEu'; 
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL'; 
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_PUBLISHABLE_KEY'; 
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // ----------------------------------------------------------------------
 
     let allRecords = [];
     let studentsInfo = {};
+    let groupedData = {};
 
-    // เริ่มต้นระบบเมื่อโหลดหน้าเสร็จ
     document.addEventListener("DOMContentLoaded", () => {
       fetchData();
       
-      // เมื่อเปลี่ยน Dropdown ให้ Render ใหม่
-      document.getElementById('student-filter').addEventListener('change', (e) => {
-        renderDashboard(e.target.value);
+      // ค้นหาแบบ Real-time เมื่อพิมพ์รหัส
+      document.getElementById('search-input').addEventListener('input', (e) => {
+        renderTable(e.target.value.trim());
       });
 
-      // ปุ่ม Refresh
       document.getElementById('btn-refresh').addEventListener('click', () => {
+        document.getElementById('search-input').value = '';
         fetchData();
       });
     });
 
     async function fetchData() {
       document.getElementById('loading-state').classList.remove('hidden');
-      document.getElementById('students-container').classList.add('hidden');
-      document.getElementById('student-filter').innerHTML = '<option value="ALL">กำลังโหลด...</option>';
+      document.getElementById('table-wrapper').classList.add('hidden');
 
       try {
-        // 1. ดึงรายชื่อนักเรียน
+        // ดึงชื่อนักเรียน
         const { data: students, error: err1 } = await supabaseClient.from('students').select('*');
         if (err1) throw err1;
-        
         studentsInfo = {};
         students.forEach(s => { studentsInfo[s.student_id] = s; });
 
-        // 2. ดึงประวัติการทำแบบฝึกหัดทั้งหมด (เรียงจากเก่าไปใหม่ เพื่อเรียง ครั้งที่ 1, 2, 3...)
+        // ดึงประวัติทั้งหมด เรียงจากเก่าไปใหม่เพื่อรัน "ครั้งที่..."
         const { data: records, error: err2 } = await supabaseClient
           .from('math_clinic_records')
           .select('*')
@@ -125,67 +126,60 @@
         if (err2) throw err2;
         allRecords = records;
 
-        // 3. สร้าง Dropdown (เฉพาะเด็กที่มีประวัติการทำ)
-        const uniqueStudentIds = [...new Set(records.map(r => r.student_id))];
-        let optionsHtml = '<option value="ALL">ดูทุกคน (All Students)</option>';
-        uniqueStudentIds.forEach(id => {
-          const name = studentsInfo[id] ? studentsInfo[id].name : `รหัส ${id}`;
-          optionsHtml += `<option value="${id}">${id} - ${name}</option>`;
-        });
-        document.getElementById('student-filter').innerHTML = optionsHtml;
-
-        // 4. แสดงผล
-        renderDashboard("ALL");
+        // ประมวลผลจัดกลุ่มข้อมูลล่วงหน้า
+        processGroupedData();
+        
+        // แสดงตารางทั้งหมดตอนเริ่มต้น
+        renderTable('');
 
       } catch (error) {
         alert("เกิดข้อผิดพลาดในการดึงข้อมูล: " + error.message);
       } finally {
         document.getElementById('loading-state').classList.add('hidden');
-        document.getElementById('students-container').classList.remove('hidden');
+        document.getElementById('table-wrapper').classList.remove('hidden');
       }
     }
 
-    function renderDashboard(filterId) {
-      const container = document.getElementById('students-container');
-      container.innerHTML = '';
-
-      // จัดกลุ่มประวัติแยกตามรหัสนักเรียน
-      const groupedData = {};
+    function processGroupedData() {
+      groupedData = {};
       allRecords.forEach(record => {
-        if (filterId !== "ALL" && String(record.student_id) !== String(filterId)) return;
+        const sId = String(record.student_id);
         
-        if (!groupedData[record.student_id]) {
-          groupedData[record.student_id] = {
-            student_id: record.student_id,
-            name: record.name,
-            class_num: record.class_number,
-            student_num: record.student_number,
+        if (!groupedData[sId]) {
+          groupedData[sId] = {
+            student_id: sId,
+            name: studentsInfo[sId] ? studentsInfo[sId].name : record.name,
+            class_num: studentsInfo[sId] ? studentsInfo[sId].class_number : record.class_number,
+            student_num: studentsInfo[sId] ? studentsInfo[sId].student_number : record.student_number,
             history: [],
-            summary: {} // เก็บนับจำนวนครั้งและสถานะล่าสุด { 1: { count: 2, passed: true }, ... }
+            summary: {}
           };
           for(let i=1; i<=10; i++) {
-            groupedData[record.student_id].summary[i] = { count: 0, status: 'NONE' };
+            groupedData[sId].summary[i] = { count: 0, status: 'NONE' };
           }
         }
 
-        const g = groupedData[record.student_id];
-        
-        // เพิ่มลงประวัติแบบเรียงครั้ง (Timeline)
-        // นับว่าเคยทำอะไรไปแล้วกี่ครั้ง (รวมทุกตอน) เพื่อรันเลข ครั้งที่ 1, 2, 3...
+        const g = groupedData[sId];
         const attemptNumber = g.history.length + 1;
+        
+        // แปลงสถานะให้เป็นคำสั้นๆ
+        let shortStatus = record.is_correct;
+        if(record.is_correct === 'ถูกต้อง') shortStatus = 'ถูก';
+        else if(record.is_correct === 'รอตรวจ') shortStatus = 'รอตรวจ';
+        else if(record.is_correct === 'ผิด') shortStatus = 'ผิด';
+        else if(record.is_correct === 'กำลังเรียน') shortStatus = 'ยังไม่ส่ง';
+
         g.history.push({
           attemptNum: attemptNumber,
           section: record.section,
-          status: record.is_correct,
-          answer: record.student_answer,
-          date: new Date(record.created_at).toLocaleString('th-TH')
+          status: shortStatus,
+          full_status: record.is_correct
         });
 
-        // อัปเดต Summary (ส่วนตาราง 10 ช่อง)
         const sec = record.section;
-        g.summary[sec].count += 1; // เพิ่มจำนวนครั้งที่ทำของตอนนี้
+        g.summary[sec].count += 1; 
         
-        // อัปเดตสถานะ (ถ้าเคยถูกแล้ว จะไม่โดนทับด้วยผิด)
+        // ถ้าเคยถูกแล้ว จะไม่เปลี่ยนเป็นผิดอีก
         if (g.summary[sec].status !== 'CORRECT') {
           if (record.is_correct === 'ถูกต้อง') g.summary[sec].status = 'CORRECT';
           else if (record.is_correct === 'รอตรวจ') g.summary[sec].status = 'PENDING';
@@ -193,94 +187,94 @@
           else if (record.is_correct === 'กำลังเรียน') g.summary[sec].status = 'LEARNING';
         }
       });
+    }
 
-      // ถ้าไม่มีข้อมูล
-      if (Object.keys(groupedData).length === 0) {
-        container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-500 border border-slate-200 shadow-sm">ไม่พบประวัติการทำแบบฝึกหัด</div>`;
-        return;
-      }
+    function renderTable(searchTerm) {
+      const tbody = document.getElementById('table-body');
+      const noDataMsg = document.getElementById('no-data-msg');
+      tbody.innerHTML = '';
+      let hasData = false;
 
-      // วาดการ์ดของนักเรียนแต่ละคน
-      for (const [sId, data] of Object.entries(groupedData)) {
-        const card = document.createElement('div');
-        card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden";
-        
-        // 1. วาด Header
-        let html = `
-          <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div class="text-sm font-bold text-blue-600 mb-1">รหัส: ${data.student_id} | ม.${data.class_num} เลขที่ ${data.student_num}</div>
-              <h3 class="text-xl font-extrabold text-slate-800">${data.name}</h3>
-            </div>
-            <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-lg border border-slate-200">
-              ทำไปแล้วทั้งหมด <span class="text-blue-600 font-bold text-lg">${data.history.length}</span> ครั้ง
-            </div>
-          </div>
-          <div class="p-6">
-        `;
+      // เรียงลำดับนักเรียนตามห้องและเลขที่
+      const sortedStudents = Object.values(groupedData).sort((a, b) => {
+        if (a.class_num !== b.class_num) return a.class_num - b.class_num;
+        return a.student_num - b.student_num;
+      });
 
-        // 2. วาดกล่องสรุป 10 ช่อง (มีเลขอยู่พื้นหลัง)
-        html += `<h4 class="font-bold text-slate-700 mb-3 flex items-center gap-2"><svg class="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg> ภาพรวมรายตอน (ตัวเลขจางๆ คือจำนวนรอบที่เข้าทำ)</h4>`;
-        html += `<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">`;
-        
+      sortedStudents.forEach(data => {
+        // กรองการค้นหาจากรหัสนักเรียน (ถ้ามี)
+        if (searchTerm && !data.student_id.includes(searchTerm)) return;
+        hasData = true;
+
+        // ---------------- สร้างกล่อง 10 ตอน ----------------
+        let summaryHtml = `<div class="grid grid-cols-5 gap-2 max-w-xs mx-auto">`;
         for (let i = 1; i <= 10; i++) {
           const sum = data.summary[i];
-          let colorClass = 'bg-slate-100 text-slate-400 border-slate-200';
-          let statusText = 'ยังไม่ทำ';
-          let textColor = 'text-slate-600';
+          let bgClass = 'bg-slate-100 border-slate-200 text-slate-400'; // ยังไม่ทำ
+          let opacityText = 'text-slate-300';
 
           if (sum.status === 'CORRECT') {
-            colorClass = 'bg-green-500 text-white border-green-600 shadow-md';
-            statusText = 'ผ่านแล้ว';
-            textColor = 'text-white';
+            bgClass = 'bg-green-500 border-green-600 text-white shadow-sm';
+            opacityText = 'text-green-800/30';
           } else if (sum.status === 'WRONG') {
-            colorClass = 'bg-red-500 text-white border-red-600 shadow-md';
-            statusText = 'ผิด';
-            textColor = 'text-white';
+            bgClass = 'bg-red-500 border-red-600 text-white shadow-sm';
+            opacityText = 'text-red-900/30';
           } else if (sum.status === 'PENDING') {
-            colorClass = 'bg-blue-500 text-white border-blue-600 shadow-md';
-            statusText = 'รอตรวจ';
-            textColor = 'text-white';
+            bgClass = 'bg-blue-500 border-blue-600 text-white shadow-sm';
+            opacityText = 'text-blue-900/30';
           } else if (sum.status === 'LEARNING') {
-            colorClass = 'bg-amber-100 text-amber-700 border-amber-300';
-            statusText = 'ค้าง/ยังไม่ส่ง';
+            bgClass = 'bg-amber-100 border-amber-300 text-amber-700';
+            opacityText = 'text-amber-600/20';
           }
 
-          html += `
-            <div class="relative overflow-hidden flex flex-col items-center justify-center p-4 rounded-xl border-2 ${colorClass} transition-all">
-              <span class="z-10 text-xs font-bold opacity-80 mb-1">ตอนที่ ${i}</span>
-              <span class="z-10 text-lg font-black ${textColor}">${statusText}</span>
-              <span class="watermark-number ${sum.status === 'NONE' || sum.status === 'LEARNING' ? 'text-slate-300' : 'text-black'}">${sum.count}</span>
+          summaryHtml += `
+            <div class="relative w-12 h-12 flex items-center justify-center rounded-lg border-2 ${bgClass} overflow-hidden">
+              <span class="relative z-10 font-bold text-sm">ต.${i}</span>
+              ${sum.count > 0 ? `<span class="absolute inset-0 flex items-center justify-center text-4xl font-black ${opacityText} pointer-events-none select-none">${sum.count}</span>` : ''}
             </div>
           `;
         }
-        html += `</div>`;
+        summaryHtml += `</div>`;
 
-        // 3. วาดประวัติ (Timeline) ทีละครั้ง
-        html += `<h4 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg> ประวัติการส่งคำตอบ</h4>`;
-        html += `<div class="bg-slate-50 rounded-xl p-4 border border-slate-200 max-h-64 overflow-y-auto space-y-2">`;
-        
+        // ---------------- สร้างรายการประวัติ (ครั้งที่ X: ตอนที่ Y ถูก/ผิด) ----------------
+        let historyHtml = `<ul class="space-y-1 max-h-32 overflow-y-auto pr-2">`;
         data.history.forEach(h => {
-          let badge = '';
-          if(h.status === 'ถูกต้อง') badge = '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-md border border-green-200">✔️ ถูกต้อง</span>';
-          else if(h.status === 'ผิด') badge = '<span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-md border border-red-200">❌ ผิด</span>';
-          else if(h.status === 'รอตรวจ') badge = '<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-md border border-blue-200">⏳ รอตรวจ</span>';
-          else badge = `<span class="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-md border border-amber-200">⚠️ ${h.status}</span>`;
+          let color = 'text-slate-600';
+          if(h.status === 'ถูก') color = 'text-green-600 font-bold';
+          else if(h.status === 'ผิด') color = 'text-red-500 font-bold';
+          else if(h.status === 'รอตรวจ') color = 'text-blue-500 font-bold';
 
-          html += `
-            <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-slate-100 text-sm">
-              <div class="flex items-center gap-3">
-                <div class="bg-slate-800 text-white font-bold w-16 text-center py-1 rounded-md text-xs">ครั้งที่ ${h.attemptNum}</div>
-                <div class="font-medium text-slate-700">ตอนที่ ${h.section} <span class="text-slate-400 font-normal ml-2 text-xs">(${h.date})</span></div>
-              </div>
-              <div>${badge}</div>
-            </div>
-          `;
+          historyHtml += `<li class="border-b border-slate-100 pb-1 mb-1 text-xs">ครั้ง ${h.attemptNum} : ตอนที่ ${h.section} <span class="${color}">${h.status}</span></li>`;
         });
-        
-        html += `</div></div>`;
-        card.innerHTML = html;
-        container.appendChild(card);
+        historyHtml += `</ul>`;
+
+        // ---------------- สร้างแถวตาราง ----------------
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition-colors";
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex flex-col">
+              <span class="text-xs font-bold text-blue-600 mb-1">รหัส: ${data.student_id}</span>
+              <span class="text-base font-bold text-slate-800">${data.name}</span>
+              <span class="text-sm text-slate-500 mt-1">ม.${data.class_num} เลขที่ ${data.student_num}</span>
+            </div>
+          </td>
+          <td class="px-6 py-4">
+            ${summaryHtml}
+          </td>
+          <td class="px-6 py-4 bg-slate-50">
+            ${historyHtml}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if (!hasData) {
+        noDataMsg.classList.remove('hidden');
+        document.querySelector('table').classList.add('hidden');
+      } else {
+        noDataMsg.classList.add('hidden');
+        document.querySelector('table').classList.remove('hidden');
       }
     }
   </script>
