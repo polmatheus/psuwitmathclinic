@@ -151,6 +151,17 @@
           </div>
         </div>
       </div>
+      
+      <div class="mt-5">
+        <div class="flex justify-between text-sm font-bold text-slate-500 mb-2">
+          <span>ความคืบหน้าการดูคลิป (เปอร์เซ็นต์)</span>
+          <span id="video-progress-text">0%</span>
+        </div>
+        <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden shadow-inner border border-slate-300">
+          <div id="video-progress-bar" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
     </div>
     
     <div id="quiz-area" class="hidden space-y-8">
@@ -203,8 +214,8 @@
     // ----------------------------------------------------------------------
     // ⚠️ ตั้งค่า Supabase ตรงนี้
     // ----------------------------------------------------------------------
-    const SUPABASE_URL = 'https://vcxneoclwtbiiyjsyhve.supabase.co'; // เช่น 'https://vcxneoclwtbiiyjsyhve.supabase.co'
-    const SUPABASE_ANON_KEY = 'sb_publishable_UUUwDKz-aB2YKoOKkxz9ZQ_tSI_7LEu'; 
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL'; 
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_PUBLISHABLE_KEY'; 
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // ----------------------------------------------------------------------
@@ -238,7 +249,10 @@
 
     let currentSession = null;
     let globalStudentId = '';
-    let autoSelectedSection = null; // ตัวแปรเก็บตอนที่ระบบเลือกให้
+    let autoSelectedSection = null; 
+    let baseStartTime = 0; // ตัวแปรเก็บเวลาเริ่มของวิดีโอ (จาก Database)
+    let baseEndTime = 0;   // ตัวแปรเก็บเวลาจบของวิดีโอ (จาก Database)
+    
     let player; let maxTimeWatched = 0; let lastPauseTime = 0; let isVideoFinished = false;
     let videoCheckInterval; let isYoutubeApiReady = false; let currentStartTime = 0; let currentEndTime = 0;
 
@@ -265,11 +279,35 @@
     function checkVideoTime() {
         if (!player || typeof player.getCurrentTime !== 'function' || isVideoFinished) return;
         let currentTime = player.getCurrentTime();
+        let duration = player.getDuration();
+        let targetEndTime = baseEndTime > 0 ? baseEndTime : duration;
         
         if (currentTime < currentStartTime - 1) { player.seekTo(currentStartTime); return; }
         if (currentTime > maxTimeWatched + 2) { player.seekTo(maxTimeWatched); return; } 
         else { if (currentTime > maxTimeWatched) { maxTimeWatched = currentTime; } }
         if (currentTime < lastPauseTime) { lastPauseTime = currentTime; }
+
+        // -------------------------------------------------------------
+        // อัปเดต Progress Bar และบันทึกเวลาลง Local Storage
+        // -------------------------------------------------------------
+        if (targetEndTime > 0 && maxTimeWatched >= baseStartTime) {
+            let watchedSoFar = maxTimeWatched - baseStartTime;
+            let totalDurationToWatch = targetEndTime - baseStartTime;
+            let progressPercent = (watchedSoFar / totalDurationToWatch) * 100;
+            
+            if (progressPercent > 100) progressPercent = 100;
+            if (progressPercent < 0) progressPercent = 0;
+            
+            // อัปเดต UI แถบวิ่ง
+            document.getElementById('video-progress-bar').style.width = progressPercent + '%';
+            document.getElementById('video-progress-text').innerText = Math.floor(progressPercent) + '%';
+            
+            // บันทึกเวลาล่าสุดเก็บไว้ในเครื่องนักเรียน (อ้างอิงรหัส session การจอง)
+            if (currentSession && currentSession.id) {
+               localStorage.setItem(`psuwit_video_${currentSession.id}`, maxTimeWatched);
+            }
+        }
+        // -------------------------------------------------------------
 
         if (currentTime - lastPauseTime >= 60 && !isVideoFinished) {
             player.pauseVideo();
@@ -277,7 +315,9 @@
             overlay.classList.remove('hidden'); overlay.classList.add('flex');
         }
 
-        if ((currentEndTime > 0 && currentTime >= currentEndTime - 1) || (player.getDuration() > 0 && maxTimeWatched >= player.getDuration() * 0.95)) { markVideoFinished(); }
+        if ((currentEndTime > 0 && currentTime >= currentEndTime - 1) || (duration > 0 && maxTimeWatched >= duration * 0.95)) { 
+            markVideoFinished(); 
+        }
     }
 
     document.getElementById('continue-watching-btn').addEventListener('click', () => {
@@ -286,9 +326,17 @@
         lastPauseTime = player.getCurrentTime(); player.playVideo();
     });
 
-    // แสดงโจทย์เมื่อดูวิดีโอจบ
     function markVideoFinished() {
+        if(isVideoFinished) return;
         isVideoFinished = true;
+        
+        // เติม Progress Bar ให้เต็ม 100%
+        document.getElementById('video-progress-bar').style.width = '100%';
+        document.getElementById('video-progress-text').innerText = '100%';
+        if (currentSession && currentSession.id) {
+            localStorage.setItem(`psuwit_video_${currentSession.id}`, 'FINISHED');
+        }
+
         const statusObj = document.getElementById('video-status');
         statusObj.innerHTML = "✅ คุณดูคลิปทบทวนความรู้จบแล้ว! กรุณาทำแบบฝึกหัดด้านล่าง";
         statusObj.className = "text-center text-green-700 font-bold mb-6 text-lg bg-green-50 p-4 rounded-xl border border-green-200 shadow-sm animate-pulse";
@@ -307,7 +355,6 @@
       globalStudentId = studentIdInput;
 
       try {
-        // 1. ดึงข้อมูลนักเรียนจากตาราง students
         const { data: studentData, error: studentError } = await supabaseClient
           .from('students')
           .select('*')
@@ -318,12 +365,10 @@
           throw new Error("ไม่พบรหัสนักเรียนนี้ในระบบฐานข้อมูล กรุณาติดต่อคุณครูครับ");
         }
 
-        // นำข้อมูลนักเรียนไปแสดงและล็อกไว้
         document.getElementById('name-input').value = studentData.name;
         document.getElementById('class-input').value = studentData.class_number;
         document.getElementById('number-input').value = studentData.student_number;
 
-        // 2. ดึงประวัติการทำแบบฝึกหัด (เรียงตามเวลาที่ส่ง ล่าสุดจะอยู่ท้ายสุด)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -335,7 +380,6 @@
 
         if (recordsError) throw recordsError;
 
-        // 3. ประมวลผลสถานะของแต่ละตอน (1-10)
         let progressMap = {};
         for(let i=1; i<=10; i++) progressMap[i] = { text: 'ยังไม่ทำ', color: 'bg-slate-50 text-slate-400 border-slate-200' };
         
@@ -345,7 +389,6 @@
           records.forEach(r => {
              if (new Date(r.created_at) >= today) todayRecord = r;
 
-             // อัปเดตสถานะล่าสุดของตอนนั้นๆ
              if(r.is_correct === 'ถูกต้อง') {
                  progressMap[r.section] = { text: 'ผ่านแล้ว', color: 'bg-green-100 text-green-700 border-green-300' };
              } else if (r.is_correct === 'รอตรวจ') {
@@ -358,7 +401,6 @@
           });
         }
 
-        // วาดตาราง Dashboard 10 ช่อง
         const gridHtml = Object.keys(progressMap).map(sec => `
           <div class="flex flex-col items-center justify-center p-3 rounded-xl border-2 ${progressMap[sec].color} text-center transition-all">
             <span class="text-xs font-extrabold opacity-70 mb-1">ตอนที่ ${sec}</span>
@@ -367,7 +409,6 @@
         `).join('');
         document.getElementById('progress-grid').innerHTML = gridHtml;
 
-        // 4. คำนวณว่า "ตอนถัดไป" ที่ต้องทำคือตอนไหน
         const confirmBtn = document.getElementById('confirm-button');
         const warnBox = document.getElementById('system-warning');
         autoSelectedSection = null;
@@ -376,19 +417,16 @@
         if (todayRecord) {
            warnBox.classList.remove('hidden');
            if (todayRecord.has_answer) {
-               // ใช้โควตาวันนี้ไปแล้ว
                warnBox.innerHTML = `<div class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 font-bold flex gap-2"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg> คุณส่งคำตอบและใช้โควตาของวันนี้ไปแล้ว พรุ่งนี้ค่อยกลับมาทำใหม่นะครับ</div>`;
                canProceed = false;
                document.getElementById('target-section-display').innerText = "--";
                document.getElementById('target-section-title').innerText = "โควตาวันนี้หมดแล้ว";
            } else {
-               // มีงานค้างอยู่ของวันนี้ บังคับทำตอนเดิมให้เสร็จ
                warnBox.innerHTML = `<div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 font-bold flex gap-2"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg> คุณมีโจทย์ที่ค้างอยู่ของวันนี้ ระบบจะพาคุณไปทำต่อครับ</div>`;
                autoSelectedSection = todayRecord.section;
            }
         } else {
            warnBox.classList.add('hidden');
-           // หาวงรอบถัดไป: หาช่องแรกที่ "ไม่ใช่ผ่านแล้ว" และ "ไม่ใช่รอตรวจ"
            for (let i = 1; i <= 10; i++) {
              if (progressMap[i].text !== 'ผ่านแล้ว' && progressMap[i].text !== 'รอตรวจ') {
                autoSelectedSection = i;
@@ -404,7 +442,6 @@
            }
         }
 
-        // อัปเดต UI ตอนที่ต้องทำ
         if (canProceed && autoSelectedSection !== null) {
           document.getElementById('target-section-display').innerText = `ตอนที่ ${autoSelectedSection}`;
           document.getElementById('target-section-title').innerText = `เรื่อง: ${questionBank[autoSelectedSection].title}`;
@@ -415,7 +452,6 @@
           confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
 
-        // ซ่อนหน้า 1 โชว์หน้า 2
         document.getElementById('step-1-container').classList.add('hidden');
         document.getElementById('step-2-container').classList.remove('hidden');
 
@@ -495,7 +531,6 @@
             currentSession.id = todayRecord.id; 
           }
         } else {
-          // สร้างแถวใหม่ใน math_clinic_records
           const { error: insertError } = await supabaseClient
             .from('math_clinic_records')
             .insert([{
@@ -517,7 +552,6 @@
           if (insertError) throw insertError;
         }
 
-        // โหลดเนื้อหาวิดีโอจาก Database
         const { data: vdoData, error: vdoError } = await supabaseClient
           .from('math_clinic_videos')
           .select('video_id, start_time, end_time')
@@ -534,21 +568,37 @@
         btn.classList.remove('from-blue-600', 'to-indigo-600', 'hover:from-blue-700', 'hover:to-indigo-700');
         btn.classList.add('bg-slate-500', 'text-white');
         
-        currentStartTime = qData.startTime || 0; 
-        currentEndTime = qData.endTime || 0;
+        baseStartTime = qData.startTime || 0;
+        baseEndTime = qData.endTime || 0;
+        currentStartTime = baseStartTime; 
+        currentEndTime = baseEndTime;
+        
+        // ----------------------------------------------------------------------
+        // เช็คเวลาที่บันทึกไว้ใน Local Storage ถ้านักเรียนรีเฟรชกลับมา
+        // ----------------------------------------------------------------------
+        let savedProgress = localStorage.getItem(`psuwit_video_${currentSession.id}`);
+        if (savedProgress) {
+            if (savedProgress === 'FINISHED') {
+                isVideoFinished = true;
+                markVideoFinished();
+            } else if (parseFloat(savedProgress) > currentStartTime) {
+                currentStartTime = parseFloat(savedProgress);
+            }
+        }
+        
         maxTimeWatched = currentStartTime; 
         lastPauseTime = currentStartTime; 
-        isVideoFinished = false;
         
-        // แสดงส่วนวิดีโอ (ข้อสอบจะยังไม่แสดงจนกว่าคลิปจะจบ)
-        document.getElementById('video-section').classList.remove('hidden');
-        setTimeout(() => document.getElementById('video-section').scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+        if (!isVideoFinished) {
+            document.getElementById('video-section').classList.remove('hidden');
+            setTimeout(() => document.getElementById('video-section').scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
 
-        if (player && player.loadVideoById) {
-          let loadOptions = { videoId: qData.videoId, startSeconds: currentStartTime };
-          if (currentEndTime > 0) loadOptions.endSeconds = currentEndTime;
-          player.loadVideoById(loadOptions);
-        } else { initYouTubePlayer(qData.videoId, currentStartTime, currentEndTime); }
+            if (player && player.loadVideoById) {
+              let loadOptions = { videoId: qData.videoId, startSeconds: currentStartTime };
+              if (currentEndTime > 0) loadOptions.endSeconds = currentEndTime;
+              player.loadVideoById(loadOptions);
+            } else { initYouTubePlayer(qData.videoId, currentStartTime, currentEndTime); }
+        }
 
       } catch (error) {
         alert(error.message);
@@ -562,7 +612,6 @@
       document.getElementById('reason-section').classList.toggle('hidden', !e.target.checked);
     });
 
-    // แสดงหน้าข้อสอบ
     function renderQuestionUI() {
       showWatermark(currentSession.name, currentSession.student_id);
       const qData = questionBank[currentSession.section];
@@ -585,7 +634,6 @@
       document.getElementById('reason-section').classList.add('hidden');
       document.getElementById('hint-box').classList.add('hidden'); 
       
-      // แสดงกล่องข้อสอบ
       document.getElementById('quiz-area').classList.remove('hidden');
       setTimeout(() => document.getElementById('quiz-area').scrollIntoView({ behavior: 'smooth', block: 'start' }), 500);
     }
