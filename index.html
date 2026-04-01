@@ -208,6 +208,58 @@
   </div> 
   
   <script>
+// ----------------------------------------------------------------------
+    // 🛡️ ระบบป้องกันการดูโค้ด (Anti-DevTools)
+    // ----------------------------------------------------------------------
+    
+    // 1. บล็อกการคลิกขวา (มีอยู่แล้ว แต่อันนี้เขียนให้รัดกุมขึ้น)
+    document.addEventListener('contextmenu', event => {
+      event.preventDefault();
+    });
+
+    // 2. บล็อกปุ่ม F12 และคีย์ลัดต่างๆ (Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
+    document.addEventListener('keydown', function(e) {
+      // บล็อก F12
+      if (e.key === 'F12' || e.keyCode === 123) {
+        e.preventDefault();
+        return false;
+      }
+      // บล็อก Ctrl + Shift + I (เปิด DevTools)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+        e.preventDefault();
+        return false;
+      }
+      // บล็อก Ctrl + Shift + J (เปิด Console)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
+        e.preventDefault();
+        return false;
+      }
+      // บล็อก Ctrl + Shift + C (เปิด Element Inspector)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+        e.preventDefault();
+        return false;
+      }
+      // บล็อก Ctrl + U (เปิด View Source)
+      if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    // 3. ก่อกวนคนที่พยายามเปิด DevTools ค้างไว้ก่อนเข้าเว็บ (คำสั่ง debugger จะทำให้หน้าเว็บค้างถ้าเปิด DevTools)
+    setInterval(function() {
+      const before = new Date().getTime();
+      debugger; 
+      const after = new Date().getTime();
+      if (after - before > 100) {
+        // ถ้าระบบตรวจพบว่า DevTools ถูกเปิดอยู่ (ทำให้เวลาดีเลย์) สามารถสั่งให้เว็บรีเฟรชหรือเตือนได้
+        document.body.innerHTML = "<div style='text-align:center; padding:50px; font-size:20px; font-weight:bold; color:red;'>⚠️ ไม่อนุญาตให้ใช้งานเครื่องมือผู้พัฒนา (Developer Tools) กรุณาปิดแล้วรีเฟรชหน้าเว็บใหม่ครับ</div>";
+      }
+    }, 2000);
+
+
+
+    
     document.addEventListener('contextmenu', event => event.preventDefault());
 
     // ----------------------------------------------------------------------
